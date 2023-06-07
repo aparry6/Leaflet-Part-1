@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Earthquake Visualization</title>
+  <!-- Include Leaflet CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.7.1/dist/leaflet.css" />
+  <style>
+    /* Set the size of the map container */
+    #map {
+      height: 600px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="map"></div>
+
+  <!-- Include Leaflet JavaScript -->
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script>
+    // Define the URL for earthquake data
+    var url = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_week.geojson";
+
+    // Create the map container
+    var map = L.map('map').setView([0, 0], 2);
+
+    // Add the tile layer to the map
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
+      maxZoom: 18,
+    }).addTo(map);
+
+    // Perform the AJAX request to fetch earthquake data
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        var data = JSON.parse(this.responseText);
+
+        // Loop through the earthquake features and create markers
+        data.features.forEach(function (feature) {
+          var coords = feature.geometry.coordinates;
+          var magnitude = feature.properties.mag;
+          var depth = coords[2];
+
+          // Define marker options based on magnitude and depth
+          var markerOptions = {
+            radius: Math.sqrt(magnitude) * 4,
+            color: getColor(depth),
+            fillColor: getColor(depth),
+            fillOpacity: 0.7,
+          };
+
+          // Create the marker and bind popup with additional information
+          var marker = L.circleMarker([coords[1], coords[0]], markerOptions)
+            .addTo(map)
+            .bindPopup(
+              `Magnitude: ${magnitude}<br>Depth: ${depth} km`
+            );
+        });
+      }
+    };
+    xmlhttp.open("GET", url, true);
+    xmlhttp.send();
+
+    // Function to determine marker color based on depth
+    function getColor(depth) {
+      return depth > 100 ? "#800026" :
+        depth > 70 ? "#BD0026" :
+        depth > 50 ?
